@@ -25,7 +25,7 @@ The workflow never grants itself approval, merges pull requests, publishes JSON 
 - ZIP input is limited to 1 MiB, and decompressed preset.json to 512 KiB, with a strict one-file allowlist and duplicate JSON field checks.
 - The reviewer has contents:read and issues:write only; it cannot publish preset changes.
 - URLs referring to local services, suspicious credential parameters, non-portable absolute Windows paths and executable command arguments cause flags or change requests.
-- The v1 preset format is not portable for arbitrary Win32 EXE paths; a future portable app identity resolver must handle Steam, Discord and other installed apps.
+- Community submission now supports strict package v2 `portable_app` identities: `steam`, `discord` or `custom` with an EXE basename and a `launch_app` / `focus_or_launch` behavior. The importing app resolves Steam and Discord from the recipient machine, while custom identities require manual executable mapping. Absolute v1 EXE paths remain nonportable and are flagged. Steam game IDs and wider installed-app detection are future improvements.
 - All issue descriptions and attachments are public. Never upload private app configuration or personal installation paths. A successful schema or SHA-256 check is not a security guarantee.
 - Suggested hotkeys still require explicit opt-in when imported; review must include the exact target and arguments.
 - Final acceptance always requires explicit maintainer approval.
