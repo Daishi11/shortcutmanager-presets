@@ -17,7 +17,7 @@ Downloads verify each preset against the SHA-256 in `index.json`. The digest che
 1. In ShortcutManager, select one or more shortcut actions or folders.
 2. Use **Submit to Community**, enter a collection name (if needed), author and description, and review the exact generated JSON.
 3. The app creates a ZIP containing one `preset.json` and opens the submission form. Nothing is uploaded automatically. A GitHub account is currently required to post the issue.
-4. Attach the ZIP, replace the placeholder description and check all four publication/privacy confirmations.
+4. Attach exactly one ZIP or exported preset JSON, replace the placeholder description and check all four publication/privacy confirmations. Prefer Submit to Community for portable applications; local v1 JSON exports may contain absolute paths.
 5. The automatic reviewer checks the data and posts an issue report with `pending-review` or `changes-requested`. These are **technical** statuses and do not authorize publication.
 6. A maintainer reviews every target, security impact, metadata and hotkey proposal and must expressly approve publication. Only then may the JSON and updated catalog manifest be merged.
 
