@@ -270,9 +270,13 @@ def main() -> None:
   token = os.environ['GITHUB_TOKEN']
   event = json.load(open(os.environ['GITHUB_EVENT_PATH'], encoding='utf-8'))
   issue = event.get('issue')
-  if not issue:
-    raise ValueError('This workflow requires an issue event.')
-  review_issue(repo, int(issue['number']), token)
+  number = (
+    issue.get('number') if isinstance(issue, dict)
+    else os.environ.get('REVIEW_ISSUE_NUMBER')
+  )
+  if not number or not str(number).isdigit() or int(number) <= 0:
+    raise ValueError('A valid issue number is required.')
+  review_issue(repo, int(number), token)
 
 
 if __name__ == '__main__':
