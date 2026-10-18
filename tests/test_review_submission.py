@@ -70,6 +70,38 @@ class SubmissionValidationTests(unittest.TestCase):
     self.assertEqual(status, 'changes-requested')
     self.assertTrue(any('describe' in note for note in notes))
 
+  def test_portable_steam_and_discord_are_valid_v2(self):
+    for app_id, executable in (
+      ('steam', 'steam.exe'), ('discord', 'Discord.exe'),
+    ):
+      with self.subTest(app_id=app_id):
+        payload = sample({
+          'type': 'portable_app', 'app_id': app_id,
+          'executable': executable, 'behavior': 'focus_or_launch',
+        })
+        payload['version'] = 2
+        status, notes, count = analyze(BASE_ISSUE, packet(payload))
+        self.assertEqual((status, notes, count), ('pending-review', [], 1))
+
+  def test_portable_action_rejected_in_v1(self):
+    payload = sample({
+      'type': 'portable_app', 'app_id': 'steam',
+      'executable': 'steam.exe', 'behavior': 'focus_or_launch',
+    })
+    status, notes, _ = analyze(BASE_ISSUE, packet(payload))
+    self.assertEqual(status, 'changes-requested')
+    self.assertTrue(any('version 2' in note for note in notes))
+
+  def test_portable_action_rejects_executable_traversal(self):
+    payload = sample({
+      'type': 'portable_app', 'app_id': 'custom',
+      'executable': '../bad.exe', 'behavior': 'launch_app',
+    })
+    payload['version'] = 2
+    status, notes, _ = analyze(BASE_ISSUE, packet(payload))
+    self.assertEqual(status, 'changes-requested')
+    self.assertTrue(any('Invalid portable' in note for note in notes))
+
   def test_windows_app_path_rejected_as_nonportable(self):
     action = {
       'type': 'focus_or_launch',
