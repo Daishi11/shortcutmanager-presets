@@ -55,6 +55,52 @@ class SubmissionValidationTests(unittest.TestCase):
     self.assertEqual(actions, 1)
     self.assertEqual(notes, [])
 
+  def test_direct_json_attachment_is_reviewed_without_zip(self):
+    raw = json.dumps(sample()).encode('utf-8')
+    status, notes, actions = analyze(
+      BASE_ISSUE, raw, filename='ShortcutManager-presets.json',
+    )
+    self.assertEqual((status, notes, actions), ('pending-review', [], 1))
+
+  def test_portable_v2_json_attachment_passes_data_validation(self):
+    payload = sample({
+      'type': 'portable_app', 'app_id': 'discord',
+      'executable': 'Discord.exe', 'behavior': 'focus_or_launch',
+    })
+    payload['version'] = 2
+    status, notes, actions = analyze(
+      BASE_ISSUE, json.dumps(payload).encode('utf-8'),
+      filename='ShortcutManager-presets.json',
+    )
+    self.assertEqual((status, notes, actions), ('pending-review', [], 1))
+
+  def test_direct_json_rejects_oversized_attachment(self):
+    status, notes, actions = analyze(
+      BASE_ISSUE, b' ' * (512 * 1024 + 1),
+      filename='preset.json',
+    )
+    self.assertEqual(status, 'changes-requested')
+    self.assertEqual(actions, 0)
+    self.assertTrue(any('512 KiB' in note for note in notes))
+
+  def test_direct_json_rejects_duplicate_keys(self):
+    status, notes, actions = analyze(
+      BASE_ISSUE,
+      b'{"version":2,"version":2}',
+      filename='preset.json',
+    )
+    self.assertEqual(status, 'changes-requested')
+    self.assertEqual(actions, 0)
+    self.assertTrue(any('Duplicate JSON' in note for note in notes))
+
+  def test_direct_json_rejects_non_json_content(self):
+    status, notes, actions = analyze(
+      BASE_ISSUE, b'not json', filename='preset.json',
+    )
+    self.assertEqual(status, 'changes-requested')
+    self.assertEqual(actions, 0)
+    self.assertTrue(any('Malformed JSON' in note for note in notes))
+
   def test_missing_publisher_attestation_requests_changes(self):
     issue = BASE_ISSUE.replace('[x]', '[ ]', 1)
     status, notes, _ = analyze(issue, packet())
