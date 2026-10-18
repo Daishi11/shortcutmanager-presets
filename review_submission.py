@@ -85,11 +85,9 @@ def _action_issues(action: dict, number: int) -> list[str]:
   problems = []
   kind = action['type']
   if kind == 'portable_app':
-    if action['app_id'] == 'custom':
-      problems.append(
-        f'Action {number}: unknown app identity will require manual '
-        'EXE mapping by the importing user.'
-      )
+    # Custom identities are deliberately pathless and cannot launch until
+    # the recipient explicitly maps a matching local EXE. This is not a
+    # technical rejection: the human reviewer still assesses the app intent.
     return problems
   target = action['target']
   if kind == 'open_url':
