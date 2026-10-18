@@ -129,6 +129,27 @@ class SubmissionValidationTests(unittest.TestCase):
         status, notes, count = analyze(BASE_ISSUE, packet(payload))
         self.assertEqual((status, notes, count), ('pending-review', [], 1))
 
+  def test_review_exposes_only_safe_portable_identifiers(self):
+    payload = sample({
+      'type': 'portable_app',
+      'app_id': 'steam',
+      'executable': 'steam.exe',
+      'behavior': 'focus_or_launch',
+    })
+    payload['version'] = 2
+    payload['items'][0]['name'] = 'Private account name'
+    payload['items'][0]['suggested_hotkey'] = 'Ctrl+Shift+S'
+    summary = []
+    status, notes, count = analyze(
+      BASE_ISSUE, packet(payload), action_summary=summary,
+    )
+    self.assertEqual((status, notes, count), ('pending-review', [], 1))
+    self.assertEqual(
+      summary, ['- Action 1: portable `steam` · `steam.exe` · `focus_or_launch`'],
+    )
+    self.assertNotIn('Private account name', summary[0])
+    self.assertNotIn('Ctrl+Shift+S', summary[0])
+
   def test_portable_action_rejected_in_v1(self):
     payload = sample({
       'type': 'portable_app', 'app_id': 'steam',
