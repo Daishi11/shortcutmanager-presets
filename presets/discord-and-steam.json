@@ -1,0 +1,31 @@
+{
+  "format": "shortcutmanager-presets",
+  "version": 2,
+  "name": "Discord & Steam",
+  "author": "Daishi11",
+  "description": "A small collection of shortcuts for Discord and Steam. It helps you quickly open these applications using ShortcutManager. Application paths are resolved locally when importing the preset, and suggested hotkeys are optional.",
+  "items": [
+    {
+      "kind": "action",
+      "name": "Discord",
+      "suggested_hotkey": "Ctrl+Alt+D",
+      "action": {
+        "type": "portable_app",
+        "app_id": "discord",
+        "executable": "Discord.exe",
+        "behavior": "focus_or_launch"
+      }
+    },
+    {
+      "kind": "action",
+      "name": "Steam",
+      "suggested_hotkey": "Ctrl+Alt+S",
+      "action": {
+        "type": "portable_app",
+        "app_id": "steam",
+        "executable": "steam.exe",
+        "behavior": "focus_or_launch"
+      }
+    }
+  ]
+}

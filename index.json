@@ -10,6 +10,15 @@
       "version": "1.0.0",
       "path": "presets/example-url-collection.json",
       "sha256": "157f6820b62db1766e6079227aec1666b3f468329542c39b49609e5c1ce01dd3"
+    },
+    {
+      "id": "discord-and-steam",
+      "name": "Discord & Steam",
+      "author": "Daishi11",
+      "description": "A small collection of shortcuts for Discord and Steam. It helps you quickly open these applications using ShortcutManager. Application paths are resolved locally when importing the preset, and suggested hotkeys are optional.",
+      "version": "1.0.0",
+      "path": "presets/discord-and-steam.json",
+      "sha256": "4f1bf7f74fa10e81f2f30a8bc3511594d4a62e26ea01134e589f42b432b4dcd9"
     }
   ]
 }
