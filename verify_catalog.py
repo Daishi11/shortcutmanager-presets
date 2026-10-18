@@ -12,6 +12,12 @@ ROOT = Path(__file__).resolve().parent
 PATH = re.compile(r'presets/(?:[A-Za-z0-9_-]+/){0,3}[A-Za-z0-9_-]+\.json')
 ID = re.compile(r'[a-z0-9]+(?:-[a-z0-9]+)*')
 DIGEST = re.compile(r'[0-9a-f]{64}')
+EXE = re.compile(r'[A-Za-z0-9][A-Za-z0-9_.-]{0,127}\.exe', re.I)
+BLOCKED_EXE = frozenset((
+  'cmd.exe', 'powershell.exe', 'pwsh.exe', 'wscript.exe',
+  'cscript.exe', 'mshta.exe', 'rundll32.exe', 'reg.exe',
+  'regsvr32.exe', 'schtasks.exe', 'wmic.exe',
+))
 MAX_FILE = 512 * 1024
 MAX_INDEX = 128 * 1024
 
@@ -43,7 +49,7 @@ def valid_text(value, label, blank=False):
     raise ValueError(f'Invalid {label}')
 
 
-def validate_action(node, depth, counts):
+def validate_action(node, depth, counts, package_version=1):
   counts[0] += 1
   if counts[0] > 250 or depth > 10:
     raise ValueError('Preset is too large or deeply nested.')
@@ -55,7 +61,7 @@ def validate_action(node, depth, counts):
     if not isinstance(node['items'], list):
       raise ValueError('Folder items must be a list.')
     for child in node['items']:
-      validate_action(child, depth + 1, counts)
+      validate_action(child, depth + 1, counts, package_version)
     return
   exactly(node, {'kind', 'name', 'suggested_hotkey', 'action'})
   if node['kind'] != 'action':
@@ -68,7 +74,22 @@ def validate_action(node, depth, counts):
   if not isinstance(action, dict):
     raise ValueError('Invalid action.')
   kind = action.get('type')
-  if kind == 'open_url':
+  if kind == 'portable_app':
+    if package_version != 2:
+      raise ValueError('Portable app actions require package version 2.')
+    exactly(action, {'type', 'app_id', 'executable', 'behavior'})
+    app_id = action['app_id']
+    executable = action['executable']
+    if (not isinstance(app_id, str)
+        or app_id not in ('steam', 'discord', 'custom')
+        or not isinstance(executable, str)
+        or not EXE.fullmatch(executable)
+        or executable.casefold() in BLOCKED_EXE
+        or (app_id == 'steam' and executable.casefold() != 'steam.exe')
+        or (app_id == 'discord' and executable.casefold() != 'discord.exe')
+        or action['behavior'] not in ('launch_app', 'focus_or_launch')):
+      raise ValueError('Invalid portable application identity.')
+  elif kind == 'open_url':
     exactly(action, {'type', 'target'})
     try:
       url = urlsplit(action['target'])
@@ -141,7 +162,7 @@ def validate() -> int:
       'format', 'version', 'name', 'author', 'description', 'items',
     })
     if (preset['format'] != 'shortcutmanager-presets'
-        or type(preset['version']) is not int or preset['version'] != 1
+        or type(preset['version']) is not int or preset['version'] not in (1, 2)
         or not isinstance(preset['items'], list) or not preset['items']):
       raise ValueError(f'Invalid preset package: {relative}')
     if any(preset[field] != row[field] for field in (
@@ -150,7 +171,7 @@ def validate() -> int:
       raise ValueError(f'Preset metadata mismatch: {relative}')
     counts = [0]
     for node in preset['items']:
-      validate_action(node, 1, counts)
+      validate_action(node, 1, counts, preset['version'])
 
   files = {
     str(path.relative_to(ROOT)).replace('\\', '/')
