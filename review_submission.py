@@ -1,6 +1,6 @@
-"""Read-only validation of untrusted community ZIP submissions.
+"""Read-only validation of untrusted community ZIP and JSON submissions.
 
-Runs on trusted default-branch source. Never extracts or executes ZIP content,
+Runs on trusted default-branch source. Never extracts or executes attachments,
 and never publishes preset content. The GitHub token can comment/label only.
 """
 from __future__ import annotations
@@ -22,7 +22,7 @@ MAX_PRESET = 512 * 1024
 REVIEW_MARKER = '<!-- shortcutmanager-review-v1 -->'
 ATTACHMENT = re.compile(
   r'https://github\.com/user-attachments/files/[0-9]+/'
-  r'[A-Za-z0-9_.-]+\.zip(?=[)\s]|$)', re.I,
+  r'[A-Za-z0-9_.-]+\.(?:zip|json)(?=[)\s]|$)', re.I,
 )
 ISSUE_STATUSES = frozenset((
   'pending-review', 'changes-requested', 'approved', 'published',
@@ -39,24 +39,32 @@ def strict_pairs(pairs):
   return result
 
 
-def load_submission(zip_bytes: bytes) -> dict:
-  if len(zip_bytes) > MAX_ZIP:
-    raise ValueError('ZIP exceeds the 1 MiB submission limit.')
-  try:
-    with zipfile.ZipFile(io.BytesIO(zip_bytes)) as archive:
-      entries = archive.infolist()
-      if len(entries) != 1 or entries[0].filename != 'preset.json':
-        raise ValueError('ZIP must contain exactly one preset.json.')
-      entry = entries[0]
-      if entry.is_dir() or entry.file_size > MAX_PRESET:
-        raise ValueError('Preset JSON is too large or is not a file.')
-      if entry.flag_bits & 1:
-        raise ValueError('Encrypted presets are not accepted.')
-      # No extractall/extract, and verify size a second time after decompression.
-      with archive.open(entry) as file:
-        raw = file.read(MAX_PRESET + 1)
-  except (zipfile.BadZipFile, RuntimeError, EOFError, OSError) as error:
-    raise ValueError('ZIP cannot be opened safely.') from error
+def load_submission(payload: bytes, *, filename: str = 'preset.zip') -> dict:
+  """Parse an uploaded preset as data without extracting or executing it."""
+  if not isinstance(payload, bytes):
+    raise ValueError('Attachment must contain binary bytes.')
+  if filename.lower().endswith('.json'):
+    raw = payload
+  elif filename.lower().endswith('.zip'):
+    if len(payload) > MAX_ZIP:
+      raise ValueError('ZIP exceeds the 1 MiB submission limit.')
+    try:
+      with zipfile.ZipFile(io.BytesIO(payload)) as archive:
+        entries = archive.infolist()
+        if len(entries) != 1 or entries[0].filename != 'preset.json':
+          raise ValueError('ZIP must contain exactly one preset.json.')
+        entry = entries[0]
+        if entry.is_dir() or entry.file_size > MAX_PRESET:
+          raise ValueError('Preset JSON is too large or is not a file.')
+        if entry.flag_bits & 1:
+          raise ValueError('Encrypted presets are not accepted.')
+        # No extractall/extract, with a second post-decompression size limit.
+        with archive.open(entry) as file:
+          raw = file.read(MAX_PRESET + 1)
+    except (zipfile.BadZipFile, RuntimeError, EOFError, OSError) as error:
+      raise ValueError('ZIP cannot be opened safely.') from error
+  else:
+    raise ValueError('Only .zip and .json preset attachments are supported.')
   if len(raw) > MAX_PRESET:
     raise ValueError('Preset JSON exceeds 512 KiB.')
   try:
@@ -132,7 +140,10 @@ def _action_issues(action: dict, number: int) -> list[str]:
   return problems
 
 
-def analyze(body: str, zip_bytes: bytes | None, download_error: str = '') -> tuple[str, list[str], int]:
+def analyze(
+  body: str, zip_bytes: bytes | None, download_error: str = '', *,
+  filename: str = 'preset.zip',
+) -> tuple[str, list[str], int]:
   """Return ('changes-requested'|'pending-review', notes, action count)."""
   notes = []
   if len(CHECK.findall(body)) < 4:
@@ -145,10 +156,10 @@ def analyze(body: str, zip_bytes: bytes | None, download_error: str = '') -> tup
     notes.append('Attachment could not be verified (temporary download error).')
     return 'pending-review', notes, 0
   if zip_bytes is None:
-    notes.append('Attach exactly one ZIP via the GitHub issue editor.')
+    notes.append('Attach exactly one preset ZIP or JSON file via the GitHub issue editor.')
     return 'changes-requested', notes, 0
   try:
-    data = load_submission(zip_bytes)
+    data = load_submission(zip_bytes, filename=filename)
   except (ValueError, TypeError, KeyError) as error:
     notes.append(f'Package validation failed: {error}')
     return 'changes-requested', notes, 0
@@ -191,7 +202,7 @@ def _request(url: str, *, token: str | None = None, method: str = 'GET', data=No
   ) as response:
     content = response.read((max_bytes + 1) if max_bytes is not None else -1)
   if max_bytes is not None and len(content) > max_bytes:
-    raise ValueError('ZIP download exceeds size limit.')
+    raise ValueError('Preset attachment download exceeds size limit.')
   return json.loads(content) if 'api.github.com' in url else content
 
 
@@ -212,10 +223,13 @@ def review_issue(repo: str, issue_number: int, token: str) -> None:
       zip_bytes = _request(attachments[0], max_bytes=MAX_ZIP)
     except (OSError, ValueError, TimeoutError) as exc:
       error = f'{type(exc).__name__}'  # Never expose URLs/credentials in comments.
-  status, notes, count = analyze(body, zip_bytes, error)
+  filename = attachments[0].rsplit('/', 1)[-1] if len(attachments) == 1 else 'preset.zip'
+  status, notes, count = analyze(
+    body, zip_bytes, error, filename=filename,
+  )
   if len(attachments) > 1:
     status = 'changes-requested'
-    notes.append('Multiple ZIP attachments found. Keep one current submission.')
+    notes.append('Multiple preset attachments found. Keep one current submission.')
   lines = [
     REVIEW_MARKER,
     '### Automated ShortcutManager submission check',
