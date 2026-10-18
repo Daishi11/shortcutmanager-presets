@@ -1,0 +1,4 @@
+# SHA-256 manifest entries hash the exact published JSON bytes.
+# Keep LF line endings when cloning/updating on Windows.
+*.json text eol=lf
+presets/*.json text eol=lf

@@ -1,0 +1,42 @@
+{
+  "format": "shortcutmanager-presets",
+  "version": 1,
+  "name": "Example URL Collection",
+  "author": "ShortcutManager Example",
+  "description": "Safe example URLs showing optional keys and nested folders.",
+  "items": [
+    {
+      "kind": "action",
+      "name": "Example Home",
+      "suggested_hotkey": "Ctrl+Alt+H",
+      "action": {
+        "type": "open_url",
+        "target": "https://example.com"
+      }
+    },
+    {
+      "kind": "folder",
+      "name": "References",
+      "items": [
+        {
+          "kind": "action",
+          "name": "Python",
+          "suggested_hotkey": "Ctrl+Alt+P",
+          "action": {
+            "type": "open_url",
+            "target": "https://www.python.org"
+          }
+        },
+        {
+          "kind": "action",
+          "name": "Example Org",
+          "suggested_hotkey": null,
+          "action": {
+            "type": "open_url",
+            "target": "https://example.org"
+          }
+        }
+      ]
+    }
+  ]
+}

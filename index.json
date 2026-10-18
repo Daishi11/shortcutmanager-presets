@@ -1,0 +1,15 @@
+{
+  "format": "shortcutmanager-catalog",
+  "version": 1,
+  "presets": [
+    {
+      "id": "example-url-collection",
+      "name": "Example URL Collection",
+      "author": "ShortcutManager Example",
+      "description": "Safe example URLs showing optional keys and nested folders.",
+      "version": "1.0.0",
+      "path": "presets/example-url-collection.json",
+      "sha256": "157f6820b62db1766e6079227aec1666b3f468329542c39b49609e5c1ce01dd3"
+    }
+  ]
+}

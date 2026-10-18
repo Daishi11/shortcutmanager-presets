@@ -1,0 +1,24 @@
+name: Validate community catalog
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# PR content is untrusted. No secrets, publishing credentials, or privileged
+# pull_request_target workflow is used during validation.
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify catalog schema and SHA-256
+        run: python verify_catalog.py
