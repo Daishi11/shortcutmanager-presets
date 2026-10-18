@@ -68,7 +68,7 @@ def load_submission(zip_bytes: bytes) -> dict:
   })
   if (
     data['format'] != 'shortcutmanager-presets'
-    or type(data['version']) is not int or data['version'] != 1
+    or type(data['version']) is not int or data['version'] not in (1, 2)
     or not isinstance(data['items'], list) or not data['items']
   ):
     raise ValueError('Unsupported preset format or version.')
@@ -77,13 +77,20 @@ def load_submission(zip_bytes: bytes) -> dict:
   valid_text(data['description'], 'description', blank=True)
   counts = [0]
   for node in data['items']:
-    validate_action(node, 1, counts)
+    validate_action(node, 1, counts, data['version'])
   return data
 
 
 def _action_issues(action: dict, number: int) -> list[str]:
   problems = []
   kind = action['type']
+  if kind == 'portable_app':
+    if action['app_id'] == 'custom':
+      problems.append(
+        f'Action {number}: unknown app identity will require manual '
+        'EXE mapping by the importing user.'
+      )
+    return problems
   target = action['target']
   if kind == 'open_url':
     parsed = urllib.parse.urlsplit(target)
