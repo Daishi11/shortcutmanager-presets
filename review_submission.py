@@ -143,6 +143,7 @@ def _action_issues(action: dict, number: int) -> list[str]:
 def analyze(
   body: str, zip_bytes: bytes | None, download_error: str = '', *,
   filename: str = 'preset.zip',
+  action_summary: list[str] | None = None,
 ) -> tuple[str, list[str], int]:
   """Return ('changes-requested'|'pending-review', notes, action count)."""
   notes = []
@@ -173,7 +174,16 @@ def analyze(
         walk(node['items'])
       else:
         count += 1
-        notes.extend(_action_issues(node['action'], count))
+        action = node['action']
+        notes.extend(_action_issues(action, count))
+        # Only output strict, allowlisted machine-independent fields. Never
+        # echo user-supplied names, URLs, arbitrary launch args or hotkeys
+        # into the automated issue report.
+        if action_summary is not None and action['type'] == 'portable_app':
+          action_summary.append(
+            f'- Action {count}: portable `{action["app_id"]}` · '
+            f'`{action["executable"]}` · `{action["behavior"]}`'
+          )
         hotkey = node['suggested_hotkey']
         if hotkey is not None:
           normalized = hotkey.strip().casefold()
@@ -224,8 +234,10 @@ def review_issue(repo: str, issue_number: int, token: str) -> None:
     except (OSError, ValueError, TimeoutError) as exc:
       error = f'{type(exc).__name__}'  # Never expose URLs/credentials in comments.
   filename = attachments[0].rsplit('/', 1)[-1] if len(attachments) == 1 else 'preset.zip'
+  action_summary: list[str] = []
   status, notes, count = analyze(
     body, zip_bytes, error, filename=filename,
+    action_summary=action_summary,
   )
   if len(attachments) > 1:
     status = 'changes-requested'
@@ -248,6 +260,12 @@ def review_issue(repo: str, issue_number: int, token: str) -> None:
       'Technical checks passed. Awaiting human/AI content review '
       'and explicit maintainer approval.'
     )
+  if action_summary:
+    lines.extend([
+      '',
+      '**Portable application identities (machine-independent fields only):**',
+      *action_summary,
+    ])
   lines.extend([
     '',
     'No preset will be published or merged by this workflow.',
