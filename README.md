@@ -1,88 +1,46 @@
 # ShortcutManager Community Presets
 
-This folder is a **publication template** for a separate **public** GitHub
-repository named `Daishi11/shortcutmanager-presets`. It is **not** the
-private ShortcutManager application source repository.
+Public, reviewed preset catalog for the Windows application **ShortcutManager**.
+This public repository is separate from the private ShortcutManager application source code.
 
-## Publish the first public catalog
+## Browse and import
 
-1. **First create the repository in GitHub's web UI** at
-   https://github.com/new — owner `Daishi11`, exact repository name
-   `shortcutmanager-presets`, **Public**, default branch `main`.
-   It can be empty: do not initialize a README, license or .gitignore.
-   **Do not change the private ShortcutManager application repository.**
-   Until the new repository exists, `git clone` will return
-   **Repository not found**. No follow-up copy/git command can succeed.
-2. From the **private ShortcutManager project folder**, pull the latest
-   changes and run the fail-safe publishing helper:
+ShortcutManager > **Community Presets** reads this public catalog without a GitHub account.
+Import has a read-only action/target preview. Suggested global hotkeys are opt-in; local config is not overwritten.
 
-   ```powershell
-   git pull
-   .\scripts\publish_community_catalog.ps1
-   ```
+- Catalog: [index.json](index.json)
+- Community review policy: [REVIEW_PROCESS.md](REVIEW_PROCESS.md)
+- Submit your own collection: [New submission issue](../../issues/new?template=preset-submission.md)
 
-   The helper checks that the new repository exists and is public
-   **before cloning or copying**, uses a fresh sibling directory named
-   `shortcutmanager-presets-public`, refuses to overwrite an existing
-   destination, copies hidden `.gitattributes` and GitHub Actions
-   files, runs `verify_catalog.py`, and only then commits and pushes
-   the reviewed starter files to `main`.
-   In case that directory already exists, choose a different empty path:
-   `.\scripts\publish_community_catalog.ps1 -Destination E:\git\shortcutmanager-presets-new`.
-3. Check that the manifest is public from an incognito browser window
-   (no GitHub login required):
-   `https://raw.githubusercontent.com/Daishi11/shortcutmanager-presets/main/index.json`
-4. Start ShortcutManager and open **Community Presets**. The sample
-   collection should be listed. **Review and import** reuses the same
-   action/target preview and individually opt-in hotkeys as local import.
+## Submit a preset
 
-**Recovery from an earlier failed clone:** If `git clone` failed,
-`E:\git\shortcutmanager-presets` is not a valid checkout. The previous
-wildcard-based `Copy-Item` command may have placed partial files there.
-Do not run `git add` in it or delete unknown files blindly. The publishing
-helper deliberately uses a **different** fresh folder, so the failed
-local destination can remain untouched until you inspect it.
+1. Select a folder or actions in ShortcutManager and click **Submit to Community**.
+2. Enter a public author name and description. The app prepares a local ZIP containing exactly one preset.json; it does **not** upload it automatically.
+3. Open the submission issue linked from the app. Attach the ZIP, write a meaningful description and check all four public-sharing/security confirmations.
+4. GitHub Actions runs a data-only review. An issue receives **changes-requested** or **pending-review**; the bot never approves or publishes anything.
+5. A human/AI reviewer checks the contents and makes a recommendation. **Daishi11 must explicitly authorize publication** before the preset is added.
 
-The sample contains only public example URLs. The `sha256` field in
-`index.json` is calculated from the **exact bytes**, including the final
-newline, of the sample JSON. To check it on Windows:
+The current v1 format cannot port arbitrary local EXE paths across PCs. Do not share absolute installed-application paths, private URLs, usernames, passwords, or access tokens. Discord/Steam may be installed in different locations on each machine; these need a future portable application identity resolver.
+
+All submission issues and attachments are **public**. Only submit collections you intend to share.
+
+## Contribute directly with a pull request
+
+Fork the repository, add a validated preset file under presets/, and update index.json with a unique ID, version, public name/author/description, path and exact SHA-256 digest of the file bytes.
 
 ```powershell
-(Get-FileHash -Algorithm SHA256 .\presets\example-url-collection.json).Hash.ToLowerInvariant()
+python verify_catalog.py
+python -m unittest discover -s tests -v
 ```
 
-Run `python verify_catalog.py` before publishing. The included
-read-only GitHub Actions workflow validates every pull request and push
-without any app credentials or deployment secrets. Public branch
-protection and manual review are still required: contributors can modify
-the validator in their own pull requests, and a checksum is not a
-signature. `.gitattributes` forces LF for JSON files so Windows Git
-checkouts preserve the bytes used by SHA-256.
+The CI workflow validates each pull request. All submissions remain subject to maintainer review; passing CI is **not** a safety guarantee.
 
-For additional presets, export a shareable JSON preset using ShortcutManager,
-review it for sensitive/local paths, place it under `presets/` with a safe
-filename, and add an entry to `index.json` with a unique lowercase
-hyphenated ID, version, identical display metadata and SHA-256.
-All contents of this repository, including any private paths someone
-accidentally puts in a preset, are **public**.
+Do not commit private ShortcutManager configs, API keys, local personal paths or executables. Published preset JSON is treated as untrusted data, and no script or uploaded ZIP content is executed in CI.
 
-## Safety and contributions
+## Current status
 
-- Reading the public catalog requires no login, API key, token or write
-  permission. The client accepts HTTPS `raw.githubusercontent.com` URLs
-  only and never executes catalog data.
-- New contributors should **fork this repo and open a pull request**.
-  The maintainer reviews every action type, launch target, suggested
-  hotkey, description and any OS-specific path before merging.
-- The JSON parser rejects scripts, command execution actions and
-  unsupported fields. However, launching an application can still have
-  consequences when a user subsequently assigns and presses its hotkey.
-- Never commit private ShortcutManager config files, Discord/GitHub tokens,
-  personal API keys, secrets, local user paths, or binaries. Never place a
-  GitHub PAT inside the ShortcutManager desktop app.
-- Protect the main branch; require code review for incoming PRs. A
-  SHA-256 checks accidental or unauthorized file changes against the
-  catalog manifest, but it is **not** a signature or trust guarantee
-  against a compromised manifest/repository.
-- Automatic preset updates and resolving user overrides are intentionally
-  not part of this first read-only implementation.
+- Public read-only catalog: available and tested.
+- Issue-based submission: available, requires GitHub login.
+- GitHub Actions automated ZIP technical review: enabled.
+- Maintainer-approved publication: manual; no automatic merges.
+- Portable imported app identities, account-free submissions, likes and download counting: not yet implemented.
