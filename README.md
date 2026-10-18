@@ -10,7 +10,7 @@ Import has a read-only action/target preview. Suggested global hotkeys are opt-i
 
 - Catalog: [index.json](index.json)
 - Community review policy: [REVIEW_PROCESS.md](REVIEW_PROCESS.md)
-- Submit your own collection: [New submission issue](../../issues/new?template=preset-submission.md)
+- Submit your own collection: [New submission issue](https://github.com/Daishi11/shortcutmanager-presets/issues/new?template=preset-submission.md)
 
 ## Submit a preset
 
