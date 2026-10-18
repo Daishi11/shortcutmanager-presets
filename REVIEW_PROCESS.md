@@ -3,8 +3,8 @@
 ## Submission and approval
 
 1. Contributor uses ShortcutManager > Submit to Community. The app prepares a ZIP containing a single preset.json, but does not upload it.
-2. Contributor opens a public GitHub issue, provides a meaningful description, attaches the ZIP and checks the four privacy/publication consent boxes.
-3. GitHub Actions reads the ZIP as untrusted data, verifies format, action types, size, nesting and machine-specific paths. It never extracts or executes the ZIP.
+2. Contributor opens a public GitHub issue, provides a meaningful description, attaches exactly one ZIP or exported preset JSON and checks the four privacy/publication consent boxes.
+3. GitHub Actions reads the ZIP or JSON as untrusted data, verifies format, action types, size, nesting and machine-specific paths. It never extracts or executes the attachment.
 4. A bot comment and one of two technical statuses record the outcome: **changes-requested** (problems found) or **pending-review** (no automatic blockers; not approved).
 5. An independent human/AI reviewer evaluates every target, URL, full launch argument, suggested hotkey, author intention, privacy, portability and abuse potential.
 6. Only the maintainer (Daishi11) explicitly authorizes publication. After approval, the checked JSON is added under presets/, index.json is updated with a unique ID, version, metadata and the exact SHA-256, and catalog CI must pass.
@@ -22,7 +22,7 @@ The workflow never grants itself approval, merges pull requests, publishes JSON 
 ## Security and portability rules
 
 - Only the trusted default-branch reviewer runs. Untrusted ZIP contents are **never executed**, imported into Python, or extracted to the filesystem.
-- ZIP input is limited to 1 MiB, and decompressed preset.json to 512 KiB, with a strict one-file allowlist and duplicate JSON field checks.
+- ZIP input is limited to 1 MiB, and decompressed or directly attached preset JSON to 512 KiB, with a strict ZIP one-file allowlist and duplicate JSON field checks.
 - The reviewer has contents:read and issues:write only; it cannot publish preset changes.
 - URLs referring to local services, suspicious credential parameters, non-portable absolute Windows paths and executable command arguments cause flags or change requests.
 - Community submission now supports strict package v2 `portable_app` identities: `steam`, `discord` or `custom` with an EXE basename and a `launch_app` / `focus_or_launch` behavior. The importing app resolves Steam and Discord from the recipient machine, while custom identities require manual executable mapping. Absolute v1 EXE paths remain nonportable and are flagged. Steam game IDs and wider installed-app detection are future improvements.
