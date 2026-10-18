@@ -1,46 +1,55 @@
 # ShortcutManager Community Presets
 
-Public, reviewed preset catalog for the Windows application **ShortcutManager**.
-This public repository is separate from the private ShortcutManager application source code.
+Public, reviewed community preset catalog for the **private** ShortcutManager desktop application. The app itself remains in a separate, private repository.
 
-## Browse and import
+## Browse
 
-ShortcutManager > **Community Presets** reads this public catalog without a GitHub account.
-Import has a read-only action/target preview. Suggested global hotkeys are opt-in; local config is not overwritten.
+The published catalog is available without signing in:
 
-- Catalog: [index.json](index.json)
-- Community review policy: [REVIEW_PROCESS.md](REVIEW_PROCESS.md)
-- Submit your own collection: [New submission issue](https://github.com/Daishi11/shortcutmanager-presets/issues/new?template=preset-submission.md)
+- Catalog manifest: https://raw.githubusercontent.com/Daishi11/shortcutmanager-presets/main/index.json
+- Presets: see the `presets/` folder and `index.json` manifest.
+- In ShortcutManager, use **Community Presets** to browse, review and import entries.
+
+Downloads verify each preset against the SHA-256 in `index.json`. The digest checks integrity relative to the catalog manifest; it is **not** a safety signature. Review all targets and optional hotkeys before importing.
 
 ## Submit a preset
 
-1. Select a folder or actions in ShortcutManager and click **Submit to Community**.
-2. Enter a public author name and description. The app prepares a local ZIP containing exactly one preset.json; it does **not** upload it automatically.
-3. Open the submission issue linked from the app. Attach the ZIP, write a meaningful description and check all four public-sharing/security confirmations.
-4. GitHub Actions runs a data-only review. An issue receives **changes-requested** or **pending-review**; the bot never approves or publishes anything.
-5. A human/AI reviewer checks the contents and makes a recommendation. **Daishi11 must explicitly authorize publication** before the preset is added.
+1. In ShortcutManager, select one or more shortcut actions or folders.
+2. Use **Submit to Community**, enter a collection name (if needed), author and description, and review the exact generated JSON.
+3. The app creates a ZIP containing one `preset.json` and opens the submission form. Nothing is uploaded automatically. A GitHub account is currently required to post the issue.
+4. Attach the ZIP, replace the placeholder description and check all four publication/privacy confirmations.
+5. The automatic reviewer checks the data and posts an issue report with `pending-review` or `changes-requested`. These are **technical** statuses and do not authorize publication.
+6. A maintainer reviews every target, security impact, metadata and hotkey proposal and must expressly approve publication. Only then may the JSON and updated catalog manifest be merged.
 
-The current v1 format cannot port arbitrary local EXE paths across PCs. Do not share absolute installed-application paths, private URLs, usernames, passwords, or access tokens. Discord/Steam may be installed in different locations on each machine; these need a future portable application identity resolver.
+Submission form: https://github.com/Daishi11/shortcutmanager-presets/issues/new?template=preset-submission.md
 
-All submission issues and attachments are **public**. Only submit collections you intend to share.
+The full process, status definitions and threat model are documented in [REVIEW_PROCESS.md](REVIEW_PROCESS.md).
 
-## Contribute directly with a pull request
+## Portable application presets
 
-Fork the repository, add a validated preset file under presets/, and update index.json with a unique ID, version, public name/author/description, path and exact SHA-256 digest of the file bytes.
+The application supports **preset package v2** for portable app identities. Community submissions can represent Steam/Discord and generic Win32 programs without exposing the creator’s absolute installation paths. Steam and Discord are resolved on the importing Windows PC using known local registrations; generic programs require explicit local executable mapping. Suggested hotkeys remain opt-in.
+
+Legacy v1 package files remain readable; absolute application paths in a community contribution are not portable and will be flagged by review. Existing AppsFolder/AUMID actions can preserve their stable identifiers. Steam **game IDs**, broad installed-application auto-detection and partial unresolved imports are not yet implemented.
+
+## Validation
+
+The public catalog uses an `index.json` manifest with unique entries and exact SHA-256 digests. Every `presets/*.json` file must be indexed, the allowed action types and nested structures must pass strict validation, and published metadata must match the manifest.
+
+Run locally:
 
 ```powershell
 python verify_catalog.py
 python -m unittest discover -s tests -v
 ```
 
-The CI workflow validates each pull request. All submissions remain subject to maintainer review; passing CI is **not** a safety guarantee.
+Pull requests and pushes run the read-only catalog validation. The separate submission-review workflow parses ZIP attachments as untrusted **data**, with capped sizes, no extraction, no execution and no permission to publish catalog changes. Contributors must not include scripts, command execution, credentials, secrets, private local paths or sensitive personal information.
 
-Do not commit private ShortcutManager configs, API keys, local personal paths or executables. Published preset JSON is treated as untrusted data, and no script or uploaded ZIP content is executed in CI.
+The maintainer reviews the result manually before publication. Contributors can also fork this repository and propose content via pull request.
 
-## Current status
+## Maintenance
 
-- Public read-only catalog: available and tested.
-- Issue-based submission: available, requires GitHub login.
-- GitHub Actions automated ZIP technical review: enabled.
-- Maintainer-approved publication: manual; no automatic merges.
-- Portable imported app identities, account-free submissions, likes and download counting: not yet implemented.
+- Keep JSON line endings as LF (see `.gitattributes`) because exact bytes are hashed.
+- Recalculate each updated preset SHA-256 and update the corresponding `index.json` entry.
+- Never change the private ShortcutManager application repository visibility to publish a preset.
+- Keep `main` protected and require explicit maintainer approval; a green CI build is not a safety guarantee.
+
